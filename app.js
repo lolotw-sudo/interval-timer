@@ -291,6 +291,7 @@ function finish(withSound) {
   doneAt = performance.now();
   root.style.setProperty('--c', '#34d399');
   show('done');
+  confetti();
 }
 
 function stopRun() { // 長按結束：回設定頁，不顯示完成畫面
@@ -349,6 +350,35 @@ document.addEventListener('keydown', e => {   // 鍵盤替代：空白鍵暫停�
   if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setPaused(!run?.pausedAt); }
   if (e.key === 'Escape') stopRun();
 });
+
+// ── 完成畫面的彩帶：左下、右下兩門「禮炮」往上斜噴，分兩波 ──
+let confettiRaf = 0;
+function confetti() {
+  cancelAnimationFrame(confettiRaf);
+  const cv = $('confetti'), x = cv.getContext('2d'), dpr = devicePixelRatio || 1, W = innerWidth, H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#fb7185', '#fbbf24', '#34d399', '#818cf8', '#38bdf8', '#f5f5f5'], parts = [], R = (a, b) => a + Math.random() * (b - a);
+  const volley = n => { for (const left of [true, false]) for (let i = 0; i < n; i++) {
+    const a = R(8, 38) * Math.PI / 180, v = R(H * .028, H * .045);   // 與垂直線夾角、初速（依螢幕高度）
+    parts.push({ x: left ? -5 : W + 5, y: H + 5, vx: (left ? 1 : -1) * Math.sin(a) * v, vy: -Math.cos(a) * v,
+      w: R(6, 10), h: R(10, 18), rot: R(0, 6.28), vr: R(-.25, .25), flip: R(0, 6.28), vf: R(.1, .3), c: colors[i % colors.length] });
+  } };
+  volley(55); setTimeout(() => volley(35), 350);
+  const t0 = performance.now(); let last = t0;
+  (function frame(now) {
+    const k = Math.min(3, (now - last) / 16.7); last = now;        // 以 60fps 為基準，掉幀也不會變慢
+    x.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      p.vy += .45 * k; p.vx *= .985 ** k; p.vy *= .985 ** k;
+      p.x += p.vx * k; p.y += p.vy * k; p.rot += p.vr * k; p.flip += p.vf * k;
+      x.save(); x.translate(p.x, p.y); x.rotate(p.rot); x.scale(Math.cos(p.flip), 1);   // 翻面＝紙片在空中翻轉
+      x.fillStyle = p.c; x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); x.restore();
+    }
+    if (now - t0 < 4000 && body.dataset.screen === 'done') confettiRaf = requestAnimationFrame(frame);
+    else x.clearRect(0, 0, W, H);
+  })(t0);
+}
 
 // ── 完成畫面：前 1 秒不接受點擊 ──
 let doneAt = 0;

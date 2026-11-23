@@ -107,10 +107,18 @@
   .paused #pause { opacity: 1; }
 
   /* ── 完成畫面 ── */
-  #done { justify-content: center; align-items: center; gap: 14px; text-align: center; }
+  #done { align-items: center; gap: 10px; text-align: center; padding-top: max(56px, calc(env(safe-area-inset-top) + 32px)); padding-bottom: 0; overflow: hidden; }
   #done h1 { font-size: 44px; font-weight: 300; letter-spacing: .1em; }
   #done p { color: var(--sub); font-size: 18px; }
-  body[data-screen="done"] #done h1 { animation: slide .6s var(--ease) both; }
+  /* 角色站在畫面底部：彈跳升起 → 之後輕輕上下浮動 */
+  #coach { margin-top: auto; max-height: 60vh; max-width: 92vw; object-fit: contain; object-position: bottom; transform-origin: 50% 100%; }
+  #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  body[data-screen="done"] #coach { animation: coachIn .8s .1s cubic-bezier(.175,.885,.32,1.275) both, bob 2.4s 1.1s ease-in-out infinite alternate; }
+  body[data-screen="done"] #done h1 { animation: slide .6s .45s var(--ease) both; }
+  body[data-screen="done"] #done p { animation: fadein .5s .7s var(--ease) both; }
+  @keyframes coachIn { from { transform: translateY(70%) scale(.85); opacity: 0; } 60% { opacity: 1; } }
+  @keyframes bob { to { transform: translateY(-8px); } }
+  @keyframes fadein { from { opacity: 0; } }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, ::backdrop { animation: none !important; }
@@ -151,6 +159,8 @@
   <h1>訓練完成</h1>
   <p id="doneInfo"></p>
   <p>點一下回到設定</p>
+  <img id="coach" src="coach.webp" alt="教練比讚" width="536" height="720" decoding="async">
+  <canvas id="confetti" aria-hidden="true"></canvas>
 </section>
 
 <dialog id="sheet" aria-label="常用設定">

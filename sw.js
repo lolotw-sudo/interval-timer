@@ -1,7 +1,7 @@
 // 離線快取（規格 §9）：有網路一律拿最新版並順手更新快取；沒網路才用快取。
 // 改版時把 V 加一，舊快取會自動清掉。
-const V = 'v5';
-const FILES = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
+const V = 'v6';
+const FILES = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png', 'coach.webp'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
