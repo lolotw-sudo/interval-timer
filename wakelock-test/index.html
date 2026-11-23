@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="常亮測試">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>常亮測試</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #111; color: #eee; font: 17px/1.5 -apple-system, sans-serif;
+         padding: max(16px, env(safe-area-inset-top)) 16px 32px; }
+  h1 { font-size: 22px; margin: 8px 0 16px; }
+  .box { background: #222; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .row { display: flex; justify-content: space-between; gap: 12px; }
+  .ok { color: #4ade80; } .bad { color: #f87171; } .warn { color: #facc15; }
+  #timer { font-size: 72px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+  button { width: 100%; font-size: 20px; padding: 16px; border: 0; border-radius: 14px;
+           margin-bottom: 12px; background: #2563eb; color: #fff; font-weight: 600; }
+  button.secondary { background: #374151; }
+  #log { font-size: 14px; color: #aaa; white-space: pre-wrap; max-height: 40vh; overflow: auto; }
+  ol { padding-left: 20px; margin: 0; }
+</style>
+</head>
+<body>
+<h1>螢幕常亮測試</h1>
+
+<div class="box">
+  <div class="row"><span>iOS 版本</span><span id="ios">—</span></div>
+  <div class="row"><span>開啟方式</span><span id="mode">—</span></div>
+  <div class="row"><span>瀏覽器支援常亮</span><span id="support">—</span></div>
+  <div class="row"><span>常亮狀態</span><span id="state" class="warn">未開啟</span></div>
+</div>
+
+<div class="box"><div id="timer" aria-live="off">00:00</div>
+  <div style="text-align:center;color:#aaa">已持續亮著的時間</div></div>
+
+<button id="start">開始測試（開啟常亮）</button>
+<button id="speak" class="secondary">測試語音：說「開始運動」</button>
+
+<div class="box">
+  <b>測試步驟</b>
+  <ol>
+    <li>先在 Safari 按「分享 → 加入主畫面」，再從主畫面圖示開啟。</li>
+    <li>按「開始測試」，然後<b>完全不要碰手機</b>，放 5 分鐘。</li>
+    <li>5 分鐘後螢幕還亮著、計時還在跑 → 成功。</li>
+    <li>加分題：切到別的 App 再回來，看狀態是否自動恢復「已開啟」。</li>
+    <li>加分題：打開靜音鍵，按「測試語音」，看有沒有聲音。</li>
+  </ol>
+</div>
+
+<div class="box"><b>紀錄</b><div id="log"></div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const log = msg => { $('log').textContent = new Date().toLocaleTimeString('zh-TW', {hour12:false}) + '  ' + msg + '\n' + $('log').textContent; };
+const setState = (text, cls) => { $('state').textContent = text; $('state').className = cls; };
+
+const m = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+$('ios').textContent = m ? `${m[1]}.${m[2]}` : '非 iPhone';
+const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+$('mode').textContent = standalone ? '主畫面 App' : 'Safari 網頁';
+const supported = 'wakeLock' in navigator;
+$('support').innerHTML = supported ? '<span class="ok">有</span>' : '<span class="bad">沒有</span>';
+
+let lock = null, wanted = false, startAt = 0;
+
+async function acquire() {
+  try {
+    lock = await navigator.wakeLock.request('screen');
+    setState('已開啟', 'ok'); log('常亮開啟成功');
+    lock.addEventListener('release', () => { setState('已解除', 'warn'); log('常亮被解除'); });
+  } catch (e) {
+    setState('開啟失敗', 'bad'); log(`常亮開啟失敗：${e.name} ${e.message}`);
+  }
+}
+
+$('start').onclick = async () => {
+  if (!supported) { log('這個瀏覽器不支援常亮功能'); return; }
+  wanted = true; startAt = Date.now();
+  await acquire();
+};
+
+document.addEventListener('visibilitychange', () => {
+  log(document.visibilityState === 'visible' ? '回到這個頁面' : '離開這個頁面');
+  if (wanted && document.visibilityState === 'visible') acquire();
+});
+
+setInterval(() => {
+  if (!startAt) return;
+  const s = Math.floor((Date.now() - startAt) / 1000);
+  $('timer').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}, 250);
+
+$('speak').onclick = () => {
+  if (!('speechSynthesis' in window)) { log('不支援語音'); return; }
+  const u = new SpeechSynthesisUtterance('開始運動');
+  const v = speechSynthesis.getVoices().find(v => v.lang === 'zh-TW');
+  u.lang = 'zh-TW'; if (v) u.voice = v;
+  u.onend = () => log(`語音播放完畢（${v ? v.name : '系統預設中文'}）`);
+  u.onerror = e => log(`語音錯誤：${e.error}`);
+  speechSynthesis.speak(u);
+};
+</script>
+</body>
+</html>

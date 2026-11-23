@@ -1,0 +1,9 @@
+{
+  "name": "螢幕常亮測試",
+  "short_name": "常亮測試",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [{ "src": "icon.png", "sizes": "180x180", "type": "image/png" }]
+}
