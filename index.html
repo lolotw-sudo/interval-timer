@@ -83,7 +83,8 @@
   #run { touch-action: none; text-align: center; }
   .meta { font-size: 18px; color: var(--sub); display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
   #wakeWarn { font-size: 14px; color: #fbbf24; margin-top: 4px; }
-  #stage { flex: 1; position: relative; display: grid; place-items: center; }
+  /* 左右延伸到螢幕邊緣：圓環比內容區寬，否則會整個往右擠、和數字錯開 */
+  #stage { flex: 1; position: relative; display: grid; place-items: center; margin: 0 -16px; }
   svg#ring { width: min(94vw, 62vh); height: min(94vw, 62vh); transform: rotate(-90deg); overflow: visible; }
   #track { stroke: var(--line); }
   #arc { stroke: var(--c); stroke-linecap: round; transition: stroke-width .3s var(--ease); }
@@ -94,7 +95,8 @@
   #label { font-size: clamp(28px, 9vw, 40px); font-weight: 600; letter-spacing: .12em; color: var(--c); }
   #digits { position: relative; height: 1em; width: 3ch; font-size: min(56vw, 36vh); overflow: hidden; }
   #digits.long { font-size: calc(min(56vw, 36vh) * .6); width: 5ch; }
-  #digits span { position: absolute; inset: 0; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.03em; transition: transform .45s var(--ease), opacity .45s var(--ease); }
+  /* 用各數字原本的寬度（非等寬），「1」才不會被撐寬導致整體右偏；padding-right 抵銷字距造成的偏移 */
+  #digits span { position: absolute; inset: 0; font-weight: 300; line-height: 1; font-variant-numeric: proportional-nums; letter-spacing: -.03em; padding-right: .03em; transition: transform .45s var(--ease), opacity .45s var(--ease); }
   #digits span.out { transform: translateY(-60%); opacity: 0; }
   #digits span.in { transform: translateY(60%); opacity: 0; transition: none; }
   #next { font-size: 18px; color: var(--sub); }

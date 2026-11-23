@@ -1,5 +1,5 @@
 // 離線快取：改版時把 V 加一，舊快取會自動清掉（規格 §9）
-const V = 'v2';
+const V = 'v4';
 const FILES = ['./', 'index.html', 'app.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
