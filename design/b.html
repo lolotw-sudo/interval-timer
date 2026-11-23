@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>B 圓環</title>
+<style>
+  :root { --c: #fbbf24; --ease: cubic-bezier(.4,0,.2,1); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body { background: #0b0b0f; color: #f5f5f5; font-family: -apple-system, "PingFang TC", sans-serif; }
+  /* 環境層：階段色的柔和光暈，慢慢呼吸 */
+  #aura { position: fixed; inset: -20%; background: radial-gradient(circle at 50% 45%, var(--c), transparent 60%); opacity: .22; transition: background .6s var(--ease); animation: breathe 4s ease-in-out infinite alternate; }
+  @keyframes breathe { to { opacity: .32; transform: scale(1.05); } }
+  #ui { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr auto; padding: max(20px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); text-align: center; }
+  #meta { font-size: 18px; color: #a1a1aa; display: flex; justify-content: space-between; }
+  #stage { position: relative; display: grid; place-items: center; }
+  svg#ring { width: min(92vw, 60vh); height: min(92vw, 60vh); transform: rotate(-90deg); }
+  #track { stroke: #27272a; }
+  #arc { stroke: var(--c); stroke-linecap: round; transition: stroke .6s var(--ease), stroke-width .3s var(--ease); }
+  .final #arc { stroke-width: 7; }
+  #inner { position: absolute; display: grid; place-items: center; }
+  #label { font-size: clamp(26px, 8vw, 40px); font-weight: 600; letter-spacing: .25em; color: var(--c); transition: color .6s var(--ease); }
+  #digits { position: relative; height: 1em; font-size: min(44vw, 30vh); width: 3ch; overflow: hidden; }
+  #digits span { position: absolute; inset: 0; font-weight: 200; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.03em; transition: transform .45s var(--ease), opacity .45s var(--ease), color .3s; }
+  #digits span.out { transform: translateY(-60%); opacity: 0; }
+  #digits span.in { transform: translateY(60%); opacity: 0; transition: none; }
+  .final #digits span { color: var(--c); font-weight: 300; }
+  #next { font-size: 18px; color: #a1a1aa; }
+  .enter #label { animation: slide .5s var(--ease) both; }
+  @keyframes slide { from { transform: translateY(16px); opacity: 0; letter-spacing: .6em; } }
+  #pause, #start, #done { position: fixed; inset: 0; display: grid; place-content: center; gap: 16px; text-align: center; background: rgba(11,11,15,.8); font-size: 26px; font-weight: 300; letter-spacing: .1em; }
+  #pause { opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .paused #pause { opacity: 1; }
+  #start { border: 0; color: #f5f5f5; background: #0b0b0f; font: inherit; font-size: 26px; font-weight: 300; }
+  #done { display: none; background: #0b0b0f; }
+  .finished #done { display: grid; animation: fade .6s var(--ease) both; }
+  @keyframes fade { from { opacity: 0; transform: scale(.98); } }
+  #done button { font: inherit; font-size: 18px; padding: 14px 28px; border-radius: 99px; border: 1px solid #52525b; background: none; color: #f5f5f5; }
+  a.back { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); color: #fff; opacity: .4; font-size: 13px; text-decoration: none; z-index: 5; }
+  @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition-duration: .01s !important; } }
+</style>
+</head>
+<body>
+<div id="aura"></div>
+<div id="ui" aria-live="polite">
+  <div id="meta"><span id="m1"></span><span>B 圓環</span></div>
+  <div id="stage">
+    <svg id="ring" viewBox="0 0 100 100" aria-hidden="true">
+      <circle id="track" cx="50" cy="50" r="45" fill="none" stroke-width="3"/>
+      <circle id="arc" cx="50" cy="50" r="45" fill="none" stroke-width="3" pathLength="100" stroke-dasharray="100"/>
+    </svg>
+    <div id="inner"><div id="label"></div><div id="digits"></div></div>
+  </div>
+  <div id="next"></div>
+</div>
+<div id="pause">已暫停<div style="font-size:16px;color:#a1a1aa">點一下繼續</div></div>
+<div id="done"><div style="font-size:40px">訓練完成</div><div style="font-size:16px;color:#a1a1aa">2 組 × 2 回</div><button id="again">再看一次</button></div>
+<button id="start">點一下開始預覽</button>
+<a class="back" href="./">‹ 回樣品列表</a>
+<script src="engine.js"></script>
+<script>
+const COLORS = { prep: '#fbbf24', work: '#fb7185', rest: '#34d399', setRest: '#818cf8' };
+const $ = id => document.getElementById(id), root = document.documentElement, b = document.body;
+function roll(sec) {
+  const box = $('digits'), old = box.lastElementChild, s = document.createElement('span');
+  s.textContent = sec; s.className = 'in'; box.append(s);
+  if (old) { old.className = 'out'; setTimeout(() => old.remove(), 450); }
+  requestAnimationFrame(() => requestAnimationFrame(() => s.className = ''));
+}
+const begin = runDemo({
+  onPhase(p) {
+    root.style.setProperty('--c', COLORS[p.type]);
+    $('label').textContent = p.label; $('m1').textContent = p.meta; $('next').textContent = p.next;
+    b.classList.remove('enter', 'final'); void b.offsetWidth; b.classList.add('enter');
+  },
+  onFrame({ progress }) { $('arc').style.strokeDashoffset = (-progress * 100).toFixed(2); },
+  onSecond(sec) { roll(sec); b.classList.toggle('final', sec <= 3); },
+  onPause(on) { b.classList.toggle('paused', on); },
+  onDone() { b.classList.add('finished'); },
+});
+wireStart(begin);
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>計時器風格樣品</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f4f4f5; --card: #fff; --ink: #18181b; --sub: #52525b; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0b0b0f; --card: #1c1c22; --ink: #f4f4f5; --sub: #a1a1aa; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 -apple-system, "PingFang TC", sans-serif; padding: max(20px, env(safe-area-inset-top)) 16px 32px; }
+  h1 { font-size: 24px; margin: 8px 0 4px; }
+  p.lead { color: var(--sub); margin: 0 0 20px; }
+  a.card { display: flex; gap: 14px; align-items: center; text-decoration: none; color: inherit; background: var(--card); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+  .sw { flex: none; width: 64px; height: 96px; border-radius: 14px; display: grid; place-items: center; font-size: 30px; font-weight: 800; color: #fff; }
+  h2 { font-size: 19px; margin: 0; }
+  .card p { margin: 2px 0 0; color: var(--sub); font-size: 15px; }
+</style>
+</head>
+<body>
+<h1>計時畫面・三種風格</h1>
+<p class="lead">每個樣品都會跑完一段縮短版訓練（準備 3 秒、運動 8 秒、休息 5 秒，2 組 × 2 回），可以看到所有階段切換。點畫面任何地方可以暫停。樣品沒有聲音。</p>
+
+<a class="card" href="a.html">
+  <div class="sw" style="background:linear-gradient(#7f1d1d 40%,#ef4444 40%)">A</div>
+  <div><h2>A 液面</h2><p>整個螢幕是一杯「時間」，水位隨秒數往下降，頂端有緩緩流動的波浪。最後三秒數字會跳動。</p></div>
+</a>
+<a class="card" href="b.html">
+  <div class="sw" style="background:#0b0b0f;border:3px solid #fb7185">B</div>
+  <div><h2>B 圓環</h2><p>深色底、細字體，像精品運動錶。圓環隨時間縮短，數字每秒向上捲動，背景有呼吸般的微光。</p></div>
+</a>
+<a class="card" href="c.html">
+  <div class="sw" style="background:#ff595e;color:#3b0003">C</div>
+  <div><h2>C 彈跳</h2><p>明亮活潑。新階段的顏色從中心圓形擴散，數字每秒彈一下，最後三秒放大並擴散波紋，完成時灑彩紙。</p></div>
+</a>
+</body>
+</html>
