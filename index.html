@@ -146,7 +146,8 @@
   [data-theme="a"] #wakeWarn { color: #fff; }
   [data-theme="a"] #label { color: #fff; font-weight: 800; font-size: clamp(32px, 10vw, 52px); letter-spacing: .1em; }
   [data-theme="a"] #digits { font-size: min(62vw, 44vh); }
-  [data-theme="a"] #digits.long { font-size: calc(min(62vw, 44vh) * .48); }   /* 粗體「10:00」五個字才放得下 */
+  /* 分:秒（≥60 秒）：寬度限制「10:00」五字約 3em ≤ 92vw，高度限制同兩位數——橫放時寬度夠，自動放大到和兩位數一樣高 */
+  [data-theme="a"] #digits.long { font-size: min(30vw, 44vh); }
   [data-theme="a"] #digits span { font-weight: 800; letter-spacing: -.04em; padding-right: .04em; }
   [data-theme="a"].enter #inner { animation: rise .5s var(--ease) both; }
   @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
@@ -162,7 +163,7 @@
   [data-theme="c"].enter #label { animation: drop .45s var(--back) both; }
   @keyframes drop { from { transform: translateY(-50px) scale(.6); opacity: 0; } }
   [data-theme="c"] #digits { font-size: min(58vw, 42vh); transform-origin: 50% 0; }
-  [data-theme="c"] #digits.long { font-size: calc(min(58vw, 42vh) * .6); }
+  [data-theme="c"] #digits.long { font-size: min(30vw, 42vh); }
   [data-theme="c"] #digits span { font-weight: 800; }
   [data-theme="c"] #digits.tick { animation: pop .3s var(--back); }
   @keyframes pop { 0% { transform: scale(.85); } }
