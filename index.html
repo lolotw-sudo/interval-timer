@@ -155,7 +155,8 @@
   @keyframes beat { 30% { transform: scale(1.12); } }
 
   /* C 彈跳：整片明亮底色，換階段時新顏色從中心擴散 */
-  [data-theme="c"] #run { background: var(--c); color: var(--ink); font-family: ui-rounded, "SF Pro Rounded", -apple-system, "PingFang TC", sans-serif; }
+  /* padding-bottom 多留 28px：讓「下一段」那行字落在進度條上方，不重疊 */
+  [data-theme="c"] #run { background: var(--c); color: var(--ink); font-family: ui-rounded, "SF Pro Rounded", -apple-system, "PingFang TC", sans-serif; padding-bottom: calc(max(16px, env(safe-area-inset-bottom)) + 28px); }
   [data-theme="c"] #wipe { display: block; clip-path: circle(0% at 50% 50%); }
   [data-theme="c"] #wipe.go { transition: clip-path .55s cubic-bezier(.2,0,0,1); clip-path: circle(75% at 50% 50%); }
   [data-theme="c"] .meta, [data-theme="c"] #next, [data-theme="c"] #wakeWarn { color: var(--ink); font-weight: 700; }
@@ -173,7 +174,8 @@
   [data-theme="c"] #burst { display: block; inset: auto; left: 50%; top: 50%; width: 60vw; height: 60vw; margin: -30vw; border-radius: 50%; border: 6px solid var(--ink); opacity: 0; }
   #burst.go { animation: burst .7s cubic-bezier(.2,0,0,1); }
   @keyframes burst { from { opacity: .5; transform: scale(.6); } to { opacity: 0; transform: scale(1.6); } }
-  [data-theme="c"] #bar { display: block; inset: auto 0 0; height: calc(8px + env(safe-area-inset-bottom)); background: rgba(0,0,0,.12); }
+  /* 進度條：一條 8px 細軌，放在 iPhone 底部保留區（主畫面橫條）正上方 */
+  [data-theme="c"] #bar { display: block; top: auto; left: 0; right: 0; bottom: max(8px, env(safe-area-inset-bottom)); height: 8px; background: rgba(0,0,0,.12); }
   #bar i { display: block; height: 8px; background: var(--ink); transform-origin: left; transform: scaleX(calc(1 - var(--p, 0))); }
   [data-theme="c"] #frameRect { stroke: var(--ink); }
 
