@@ -12,8 +12,12 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>間歇計時</title>
 <style>
+  /* 階段色（三種風格共用，只調深淺）：--c 主色、--deep 較深（A 的水）、--dark 很深（A 的底）、--ink 極深（C 的字） */
   @property --c { syntax: '<color>'; inherits: true; initial-value: #fb7185; }
-  :root { --c: #fb7185; --ease: cubic-bezier(.4,0,.2,1); --line: #27272a; --sub: #a1a1aa; --card: #16161c; transition: --c .6s var(--ease); }
+  @property --deep { syntax: '<color>'; inherits: true; initial-value: #e11d48; }
+  @property --dark { syntax: '<color>'; inherits: true; initial-value: #881337; }
+  @property --ink { syntax: '<color>'; inherits: true; initial-value: #4c0519; }
+  :root { --c: #fb7185; --deep: #e11d48; --dark: #881337; --ink: #4c0519; --ease: cubic-bezier(.4,0,.2,1); --back: cubic-bezier(.175,.885,.32,1.275); --line: #27272a; --sub: #a1a1aa; --card: #16161c; transition: --c .6s var(--ease), --deep .6s var(--ease), --dark .6s var(--ease), --ink .6s var(--ease); }
   * { box-sizing: border-box; margin: 0; }
   html, body { height: 100%; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   body { touch-action: manipulation; background: #0b0b0f; color: #f5f5f5; font-family: -apple-system, "PingFang TC", sans-serif; }
@@ -112,9 +116,70 @@
   #next { font-size: 18px; color: var(--sub); }
   .enter #label { animation: slide .5s var(--ease) both; }
   @keyframes slide { from { transform: translateY(16px); opacity: 0; letter-spacing: .5em; } }
-  #pause { position: fixed; inset: 0; display: grid; place-content: center; gap: 12px; background: rgba(11,11,15,.82); font-size: 30px; font-weight: 300; letter-spacing: .1em; opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+  #pause { position: fixed; inset: 0; display: grid; place-content: center; gap: 12px; background: rgba(11,11,15,.82); color: #f5f5f5; font-family: -apple-system, "PingFang TC", sans-serif; font-size: 30px; font-weight: 300; letter-spacing: .1em; opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
   #pause small { font-size: 17px; color: var(--sub); letter-spacing: .05em; }
   .paused #pause { opacity: 1; }
+
+  /* ── 倒數風格（§14）：body[data-theme] = a 液面／b 圓環／c 彈跳 ── */
+  #run > .meta, #wakeWarn, #next { position: relative; }   /* 蓋在背景層之上 */
+  .layer { position: fixed; inset: 0; pointer-events: none; display: none; }
+  body[data-screen="run"]:not([data-theme="b"]) #aura, body:not([data-theme="b"]) #ring { display: none; }
+  /* 長按結束：A、C 沿螢幕邊緣畫外框（B 用圓環外圈） */
+  #frame { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+  [data-theme="a"] #frame, [data-theme="c"] #frame { display: block; }
+  #frameRect { fill: none; stroke: #fff; stroke-width: 6; stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0; }
+  .holding #frameRect { opacity: 1; stroke-dashoffset: 0; transition: stroke-dashoffset .7s linear; }
+  [data-theme="a"] #digits, [data-theme="c"] #digits { overflow: visible; }
+  [data-theme="a"] #digits span, [data-theme="c"] #digits span { transition: none; }   /* A、C 數字直接換，不捲動 */
+  [data-theme="a"] #digits span.out, [data-theme="c"] #digits span.out { display: none; }
+  [data-theme="a"] #digits span.in, [data-theme="c"] #digits span.in { opacity: 1; transform: none; }   /* 新數字立刻出現，不留空白格 */
+
+  /* A 液面：整個畫面是一杯水，水位隨時間下降 */
+  [data-theme="a"] #run { background: var(--dark); color: #fff; }
+  [data-theme="a"] #liquid { display: block; background: var(--deep); transform: translateY(calc(var(--p, 0) * (100% + 24px))); }   /* +24px：水見底時波浪也一起沉下去 */
+  #wave { position: absolute; left: 0; top: -23px; width: 200%; height: 24px; fill: var(--deep); animation: drift 3s linear infinite; }
+  @keyframes drift { to { transform: translateX(-50%); } }
+  [data-theme="a"] .meta, [data-theme="a"] #next { color: #fff; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,.45); }   /* 陰影：在黃、綠水面上也看得清 */
+  [data-theme="a"] #wakeWarn { color: #fff; }
+  [data-theme="a"] #label { color: #fff; font-weight: 800; font-size: clamp(32px, 10vw, 52px); letter-spacing: .1em; }
+  [data-theme="a"] #digits { font-size: min(62vw, 44vh); }
+  [data-theme="a"] #digits.long { font-size: calc(min(62vw, 44vh) * .48); }   /* 粗體「10:00」五個字才放得下 */
+  [data-theme="a"] #digits span { font-weight: 800; letter-spacing: -.04em; padding-right: .04em; }
+  [data-theme="a"].enter #inner { animation: rise .5s var(--ease) both; }
+  @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
+  [data-theme="a"].final #digits.tick { animation: beat .35s cubic-bezier(.2,0,0,1); }
+  @keyframes beat { 30% { transform: scale(1.12); } }
+
+  /* C 彈跳：整片明亮底色，換階段時新顏色從中心擴散 */
+  [data-theme="c"] #run { background: var(--c); color: var(--ink); font-family: ui-rounded, "SF Pro Rounded", -apple-system, "PingFang TC", sans-serif; }
+  [data-theme="c"] #wipe { display: block; clip-path: circle(0% at 50% 50%); }
+  [data-theme="c"] #wipe.go { transition: clip-path .55s cubic-bezier(.2,0,0,1); clip-path: circle(75% at 50% 50%); }
+  [data-theme="c"] .meta, [data-theme="c"] #next, [data-theme="c"] #wakeWarn { color: var(--ink); font-weight: 700; }
+  [data-theme="c"] #label { padding: 6px 22px; border-radius: 99px; background: var(--ink); color: var(--c); font-weight: 800; letter-spacing: .05em; font-size: clamp(26px, 8vw, 40px); margin-bottom: 10px; }
+  [data-theme="c"].enter #label { animation: drop .45s var(--back) both; }
+  @keyframes drop { from { transform: translateY(-50px) scale(.6); opacity: 0; } }
+  [data-theme="c"] #digits { font-size: min(58vw, 42vh); transform-origin: 50% 0; }
+  [data-theme="c"] #digits.long { font-size: calc(min(58vw, 42vh) * .6); }
+  [data-theme="c"] #digits span { font-weight: 800; }
+  [data-theme="c"] #digits.tick { animation: pop .3s var(--back); }
+  @keyframes pop { 0% { transform: scale(.85); } }
+  [data-theme="c"].final #digits { transform: scale(1.25); }
+  [data-theme="c"].final #digits.tick { animation: big .5s var(--back); }
+  @keyframes big { 0% { transform: scale(.7); } }
+  [data-theme="c"] #burst { display: block; inset: auto; left: 50%; top: 50%; width: 60vw; height: 60vw; margin: -30vw; border-radius: 50%; border: 6px solid var(--ink); opacity: 0; }
+  #burst.go { animation: burst .7s cubic-bezier(.2,0,0,1); }
+  @keyframes burst { from { opacity: .5; transform: scale(.6); } to { opacity: 0; transform: scale(1.6); } }
+  [data-theme="c"] #bar { display: block; inset: auto 0 0; height: calc(8px + env(safe-area-inset-bottom)); background: rgba(0,0,0,.12); }
+  #bar i { display: block; height: 8px; background: var(--ink); transform-origin: left; transform: scaleX(calc(1 - var(--p, 0))); }
+  [data-theme="c"] #frameRect { stroke: var(--ink); }
+
+  /* 換風格：新畫面從滑動方向推入；上方顯示風格名稱 */
+  #stage.from-r { animation: fromR .35s var(--ease); }
+  #stage.from-l { animation: fromL .35s var(--ease); }
+  @keyframes fromR { from { transform: translateX(30%); opacity: 0; } }
+  @keyframes fromL { from { transform: translateX(-30%); opacity: 0; } }
+  #themeHint { position: fixed; left: 50%; top: max(64px, calc(env(safe-area-inset-top) + 48px)); transform: translate(-50%, -10px); padding: 8px 18px; border-radius: 99px; background: rgba(0,0,0,.6); color: #fff; font: 600 16px -apple-system, "PingFang TC", sans-serif; letter-spacing: .1em; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .25s var(--ease), transform .25s var(--ease); }
+  #themeHint.on { opacity: 1; transform: translate(-50%, 0); }
 
   /* ── 完成畫面 ── */
   #done { align-items: center; gap: 10px; text-align: center; padding-top: max(56px, calc(env(safe-area-inset-top) + 32px)); padding-bottom: 0; overflow: hidden; }
@@ -132,11 +197,11 @@
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, ::backdrop { animation: none !important; }
-    #digits span, .screen, dialog, .val { transition-duration: .01s !important; }
+    #digits span, .screen, dialog, .val, #wipe.go { transition-duration: .01s !important; }
   }
 </style>
 </head>
-<body data-screen="setup">
+<body data-screen="setup" data-theme="b">
 <div id="aura"></div>
 <div id="sr" class="sr" aria-live="assertive"></div>
 
@@ -150,7 +215,12 @@
   <ul id="rows"></ul>
 </section>
 
-<section class="screen" id="run" aria-label="計時中，點一下暫停，長按一秒結束">
+<section class="screen" id="run" aria-label="計時中，點一下暫停，長按一秒結束，左右滑動換風格">
+  <div class="layer" id="liquid"><svg id="wave" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"><path d="M0 12 Q25 0 50 12 T100 12 T150 12 T200 12 V24 H0Z"/></svg></div>
+  <div class="layer" id="wipe"></div>
+  <div class="layer" id="burst"></div>
+  <div class="layer" id="bar"><i></i></div>
+  <svg id="frame" aria-hidden="true"><rect id="frameRect" pathLength="100"/></svg>
   <div class="meta"><span id="pos"></span><span id="left" aria-label="總剩餘"></span></div>
   <div id="wakeWarn" hidden><svg class="lu" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>螢幕可能會自動變暗</div>
   <div id="stage">
@@ -162,7 +232,8 @@
     <div id="inner"><div id="label"></div><div id="digits" aria-hidden="true"></div></div>
   </div>
   <div id="next"></div>
-  <div id="pause">已暫停<small>點一下繼續<br>長按 1 秒結束</small><small>螢幕常亮：<span id="wakeState">—</span></small></div>
+  <div id="pause">已暫停<small>點一下繼續<br>長按 1 秒結束<br>左右滑動可換風格</small><small>螢幕常亮：<span id="wakeState">—</span></small></div>
+  <div id="themeHint" aria-hidden="true"></div>
 </section>
 
 <section class="screen" id="done" aria-label="訓練完成">

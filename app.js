@@ -16,9 +16,16 @@ const BUILTIN = [
 ];
 const LABEL = { prep: '準備', work: '運動', rest: '休息', setRest: '組間休息' };
 const VOICE = { prep: '準備', work: '開始運動', rest: '休息', setRest: '組間休息' };
-const COLOR = { prep: '#fbbf24', work: '#fb7185', rest: '#34d399', setRest: '#818cf8' };
+// 階段色：[主色, 較深, 很深, 極深]，三種風格共用（§14.1）
+const PALETTE = {
+  prep:    ['#fbbf24', '#d97706', '#78350f', '#422006'],
+  work:    ['#fb7185', '#e11d48', '#881337', '#4c0519'],
+  rest:    ['#34d399', '#059669', '#064e3b', '#022c22'],
+  setRest: ['#818cf8', '#4f46e5', '#312e81', '#1e1b4b'],
+};
+const THEMES = ['a', 'b', 'c'], THEME_NAME = { a: '液面', b: '圓環', c: '彈跳' };
 const $ = id => document.getElementById(id);
-const root = document.documentElement, body = document.body;
+const root = document.documentElement, body = document.body, runEl = $('run');
 
 // ── 小工具 ──
 const pad = n => String(n).padStart(2, '0');
@@ -248,7 +255,9 @@ function tick(now) {
     run.sec = sec; showDigits(sec);
     if (!run.quiet) cue(ph, sec);
   }
-  $('arc').style.strokeDashoffset = (-(1 - ms / ph.ms) * 100).toFixed(2);
+  const p = 1 - ms / ph.ms;   // 本段已過比例：B 圓環、A 水位、C 進度條都看它
+  $('arc').style.strokeDashoffset = (-p * 100).toFixed(2);
+  runEl.style.setProperty('--p', p.toFixed(4));
   $('left').textContent = clock(Math.ceil((run.totalMs - el) / 1000));
   run.quiet = false;
   run.raf = requestAnimationFrame(tick);
@@ -257,7 +266,13 @@ function tick(now) {
 function enter(i) {
   const ph = run.phases[i], nx = run.phases[i + 1], c = run.c;
   run.idx = i; run.sec = -1;
-  root.style.setProperty('--c', COLOR[ph.type]);
+  const [c0, deep, dark, ink] = PALETTE[ph.type];
+  if (theme === 'c' && i > 0) {   // C：新顏色從中心圓形擴散
+    const w = $('wipe'); w.className = 'layer'; w.style.background = c0; void w.offsetWidth; w.className = 'layer go';
+    setTimeout(() => { w.className = 'layer'; }, 560);
+  }
+  root.style.setProperty('--c', c0); root.style.setProperty('--deep', deep);
+  root.style.setProperty('--dark', dark); root.style.setProperty('--ink', ink);
   $('label').textContent = LABEL[ph.type];
   $('pos').textContent = ph.type === 'prep' ? `共 ${c.sets} 組 × ${c.rounds} 回`
     : ph.type === 'setRest' ? `第 ${ph.set} 組完成` : `第 ${ph.set} 組 · ${ph.round}/${c.rounds} 回`;
@@ -279,7 +294,30 @@ function showDigits(sec) {
   s.textContent = sec >= 60 ? clock(sec) : sec; s.className = 'in'; box.append(s);
   if (old) { old.className = 'out'; setTimeout(() => old.remove(), 450); }
   requestAnimationFrame(() => requestAnimationFrame(() => { s.className = ''; }));
+  restart(box, 'tick');                                  // A 最後 3 秒跳動、C 每秒彈一下
+  if (theme === 'c' && sec <= 3) restart($('burst'), 'go');
 }
+
+// ── 倒數風格切換（§14）──
+let theme = THEMES.includes(store.get('it.theme', 'b')) ? store.get('it.theme', 'b') : 'b';
+let hintT = 0;
+function setTheme(t, dir = 0) {
+  theme = t; body.dataset.theme = t; store.set('it.theme', t);
+  sizeFrame();
+  if (!dir) return;
+  restart($('stage'), dir > 0 ? 'from-r' : 'from-l');
+  const h = $('themeHint');
+  h.textContent = `${THEME_NAME[t]}　${THEMES.map(x => x === t ? '●' : '○').join(' ')}`;
+  h.classList.add('on'); clearTimeout(hintT); hintT = setTimeout(() => h.classList.remove('on'), 1200);
+  $('sr').textContent = `風格：${THEME_NAME[t]}`;
+}
+const switchTheme = dir => setTheme(THEMES[(THEMES.indexOf(theme) + dir + THEMES.length) % THEMES.length], dir);
+function sizeFrame() {   // A、C 長按提示的外框：貼著螢幕邊緣的圓角矩形
+  const r = $('frameRect'), W = innerWidth, H = innerHeight;
+  $('frame').setAttribute('viewBox', `0 0 ${W} ${H}`);
+  Object.entries({ x: 4, y: 4, width: W - 8, height: H - 8, rx: 40 }).forEach(([k, v]) => r.setAttribute(k, v));
+}
+addEventListener('resize', sizeFrame);
 
 function setPaused(on) {
   if (!run || !!run.pausedAt === on) return;
@@ -334,28 +372,40 @@ document.addEventListener('visibilitychange', () => {
   try { ac?.resume(); } catch {}
 });
 
-// ── 點一下＝暫停／繼續；按住 1 秒＝結束（規格 §5.5）──
-let pressT = 0, endT = 0, pressing = false, holding = false;
-const runEl = $('run');
+// ── 點一下＝暫停／繼續；按住 1 秒＝結束；左右滑＝換風格（規格 §5.5、§14.3）──
+let pressT = 0, endT = 0, pressing = false, holding = false, moved = false, sx = 0, sy = 0;
 runEl.addEventListener('pointerdown', e => {
   if (!run || !e.isPrimary || performance.now() - run.t0 < 400) return;  // 剛按「開始」時的連點不算暫停
-  pressing = true; holding = false;
+  pressing = true; holding = false; moved = false; sx = e.clientX; sy = e.clientY;
   clearTimeout(pressT); clearTimeout(endT);
   pressT = setTimeout(() => { holding = true; body.classList.add('holding'); endT = setTimeout(stopRun, 700); }, 300);
+});
+runEl.addEventListener('pointermove', e => {   // 手指移動超過 10 點：不算點一下、也不算長按
+  if (!e.isPrimary || !pressing || moved || Math.hypot(e.clientX - sx, e.clientY - sy) <= 16) return;  // 16 點：容許流汗的手輕微抖動
+  moved = true; holding = false; clearTimeout(pressT); clearTimeout(endT); body.classList.remove('holding');
 });
 function release(toggle) {
   if (!pressing) return;
   pressing = false; clearTimeout(pressT); clearTimeout(endT); body.classList.remove('holding');
-  if (toggle && !holding && run) setPaused(!run.pausedAt);
+  if (toggle && !holding && !moved && run) setPaused(!run.pausedAt);
   holding = false;
 }
-runEl.addEventListener('pointerup', () => release(true));
+runEl.addEventListener('pointerup', e => {
+  if (!e.isPrimary || !pressing) return;   // 第二根手指不算
+  const dx = e.clientX - sx, dy = e.clientY - sy;
+  const fromEdge = sx < 20 || sx > innerWidth - 20;      // 邊緣起手的滑動留給 iPhone 系統手勢
+  const swipe = moved && !fromEdge && Math.abs(dx) >= 60 && Math.abs(dx) >= 1.5 * Math.abs(dy);
+  release(true);
+  if (swipe && run) switchTheme(dx < 0 ? 1 : -1);       // 往左滑＝下一個
+});
 runEl.addEventListener('pointercancel', () => release(false));
 runEl.addEventListener('lostpointercapture', () => release(false));  // 被系統手勢打斷時的保險，避免誤結束
-document.addEventListener('keydown', e => {   // 鍵盤替代：空白鍵暫停、Esc 結束
+document.addEventListener('keydown', e => {   // 鍵盤替代：空白鍵暫停、Esc 結束、左右鍵換風格
   if (body.dataset.screen !== 'run') return;
   if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setPaused(!run?.pausedAt); }
   if (e.key === 'Escape') stopRun();
+  if (e.key === 'ArrowRight') switchTheme(1);
+  if (e.key === 'ArrowLeft') switchTheme(-1);
 });
 
 // ── 完成畫面的彩帶：左下、右下兩門「禮炮」往上斜噴，分兩波 ──
@@ -393,5 +443,6 @@ $('done').addEventListener('click', () => { if (performance.now() - doneAt > 100
 
 // ── 啟動 ──
 renderSound();
+setTheme(theme);
 show('setup');
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
