@@ -12,7 +12,7 @@ const FIELDS = [
 ];
 const BUILTIN = [
   { name: 'Tabata', c: { prep: 10, work: 20, rest: 10, rounds: 8, sets: 1, setRest: 60 } },
-  { name: 'HIIT',   c: { prep: 10, work: 40, rest: 20, rounds: 8, sets: 3, setRest: 60 } },
+  { name: 'HIIT',   c: { prep: 10, work: 30, rest: 30, rounds: 4, sets: 1, setRest: 60 } },
 ];
 const LABEL = { prep: '準備', work: '運動', rest: '休息', setRest: '組間休息' };
 const VOICE = { prep: '準備', work: '開始運動', rest: '休息', setRest: '組間休息' };
@@ -114,11 +114,13 @@ $('go').addEventListener('click', start);
 
 // ── 常用設定抽屜 ──
 const sheet = $('sheet');
+// Lucide「trash-2」（ISC 授權）
+const TRASH = '<svg class="lu" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>';
 function list() {
   const all = [...BUILTIN.map(p => ({ ...p, builtIn: true })), ...presets];
   $('plist').innerHTML = all.map(p => `
     <li><button class="pick" data-name=""><b></b><span>${summary(p.c)}</span></button>
-    ${p.builtIn ? '' : '<button class="del" aria-label="刪除">✕</button>'}</li>`).join('');
+    ${p.builtIn ? '' : `<button class="del" aria-label="刪除">${TRASH}</button>`}</li>`).join('');
   // 名稱用 textContent／dataset 放入，避免使用者輸入被當成 HTML
   $('plist').querySelectorAll('li').forEach((li, i) => {
     li.querySelector('.pick').dataset.name = all[i].name;
