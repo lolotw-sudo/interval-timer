@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>設定頁（B 圓環）</title>
+<style>
+  :root { --ease: cubic-bezier(.4,0,.2,1); --line: #27272a; --sub: #a1a1aa; --card: #16161c; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  body { background: #0b0b0f; color: #f5f5f5; font-family: -apple-system, "PingFang TC", sans-serif; display: flex; flex-direction: column; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+  #aura { position: fixed; inset: -20%; background: radial-gradient(circle at 50% 0%, #fb7185, transparent 55%); opacity: .14; pointer-events: none; animation: breathe 5s ease-in-out infinite alternate; z-index: -1; }
+  @keyframes breathe { to { opacity: .22; transform: scale(1.05); } }
+  header { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  .chip { display: flex; align-items: center; gap: 6px; font-size: 17px; padding: 10px 16px; border-radius: 99px; border: 1px solid var(--line); min-height: 44px; transition: transform .12s var(--ease), background .2s; }
+  .chip:active { transform: scale(.96); background: #1c1c22; }
+  .icon { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 20px; }
+  .icon[aria-pressed="false"] { color: #52525b; }
+  #total { text-align: center; margin: 14px 0 10px; }
+  #total small { display: block; font-size: 14px; color: var(--sub); letter-spacing: .2em; }
+  #total b { font-size: 56px; font-weight: 200; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  ul#rows { list-style: none; padding: 0; flex: 1; display: grid; align-content: start; gap: 2px; }
+  .row { display: grid; grid-template-columns: 1fr 52px 96px 52px; align-items: center; gap: 4px; padding: 10px 4px; border-bottom: 1px solid var(--line); transition: opacity .3s var(--ease); }
+  .row.off { opacity: .3; }
+  .row .name { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .val { text-align: center; font-size: 28px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .val.bump { animation: bump .25s var(--ease); }
+  @keyframes bump { 40% { transform: scale(1.12); } }
+  .step { width: 52px; height: 52px; border-radius: 50%; background: var(--card); font-size: 26px; font-weight: 300; transition: transform .12s var(--ease), background .2s; touch-action: manipulation; }
+  .step:active { transform: scale(.9); background: #26262e; }
+  .step:disabled { opacity: .25; }
+  #go { margin-top: 16px; height: 64px; border-radius: 99px; background: #fb7185; color: #1a0508; font-size: 22px; font-weight: 600; letter-spacing: .3em; transition: transform .15s var(--ease); }
+  #go:active { transform: scale(.97); }
+  /* 常用設定：底部抽屜 */
+  dialog { margin: auto 0 0; width: 100%; max-width: 100%; max-height: 80vh; border: 0; padding: 8px 16px max(20px, env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: #16161c; color: inherit; transform: translateY(100%); transition: transform .4s var(--ease); }
+  dialog.show { transform: none; }
+  dialog::backdrop { background: rgba(0,0,0,.6); opacity: 0; transition: opacity .4s var(--ease); }
+  dialog.show::backdrop { opacity: 1; }
+  .grab { width: 40px; height: 5px; border-radius: 3px; background: #3f3f46; margin: 0 auto 14px; }
+  dialog h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  #plist { list-style: none; padding: 0; }
+  #plist li { display: flex; align-items: center; border-bottom: 1px solid var(--line); animation: slidein .35s var(--ease) both; }
+  #plist li:nth-child(2) { animation-delay: .04s; } #plist li:nth-child(3) { animation-delay: .08s; } #plist li:nth-child(n+4) { animation-delay: .12s; }
+  @keyframes slidein { from { opacity: 0; transform: translateY(12px); } }
+  #plist .pick { flex: 1; text-align: left; padding: 14px 4px; min-height: 56px; }
+  #plist .pick b { font-weight: 500; font-size: 18px; }
+  #plist .pick span { display: block; color: var(--sub); font-size: 14px; margin-top: 2px; }
+  #plist .del { width: 44px; height: 44px; color: #71717a; font-size: 20px; }
+  #plist li.gone { animation: out .25s var(--ease) forwards; }
+  @keyframes out { to { opacity: 0; transform: translateX(40px); } }
+  form { display: flex; gap: 8px; margin-top: 16px; }
+  form input { flex: 1; min-width: 0; font: inherit; font-size: 17px; color: inherit; background: #0b0b0f; border: 1px solid var(--line); border-radius: 12px; padding: 12px; -webkit-user-select: text; user-select: text; }
+  form button { padding: 0 18px; border-radius: 12px; background: #fb7185; color: #1a0508; font-weight: 600; }
+  /* popover 會疊在抽屜之上 */
+  #toast { inset: max(60px, env(safe-area-inset-top)) auto auto 50%; margin: 0; border: 0; color: inherit; transform: translate(-50%, -20px); opacity: 0; background: #3f3f46; padding: 10px 18px; border-radius: 99px; font-size: 15px; transition: .3s var(--ease); pointer-events: none; }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+  a.back { position: fixed; top: max(4px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); color: #fff; opacity: .35; font-size: 12px; text-decoration: none; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, ::backdrop { animation: none !important; transition-duration: .01s !important; } }
+</style>
+</head>
+<body>
+<div id="aura"></div>
+<a class="back" href="./">‹ 回樣品列表</a>
+<header>
+  <button class="chip" id="openPresets" aria-haspopup="dialog">☰ <span id="pname">Tabata</span></button>
+  <button class="icon" id="sound" aria-pressed="true" aria-label="聲音">🔊</button>
+</header>
+<div id="total" aria-live="polite"><small>總時間</small><b id="tt"></b></div>
+<ul id="rows"></ul>
+<button id="go">開始</button>
+
+<dialog id="sheet" aria-label="常用設定">
+  <div class="grab"></div>
+  <h2>常用設定</h2>
+  <ul id="plist"></ul>
+  <form id="saveForm">
+    <input id="newName" maxlength="12" placeholder="把目前設定存成…" aria-label="新設定名稱" required>
+    <button>儲存</button>
+  </form>
+</dialog>
+<div id="toast" role="status" popover="manual"></div>
+
+<script>
+// ponytail: 設計樣品，常用設定只存在記憶體；正式版改存 localStorage
+const FIELDS = [
+  { k: 'prep',    name: '準備',     dot: '#fbbf24', min: 0, max: 60,  step: 5, time: true },
+  { k: 'work',    name: '運動',     dot: '#fb7185', min: 5, max: 600, step: 5, time: true },
+  { k: 'rest',    name: '休息',     dot: '#34d399', min: 0, max: 600, step: 5, time: true },
+  { k: 'rounds',  name: '回合',     dot: '#52525b', min: 1, max: 50,  step: 1 },
+  { k: 'sets',    name: '組數',     dot: '#52525b', min: 1, max: 20,  step: 1 },
+  { k: 'setRest', name: '組間休息', dot: '#818cf8', min: 0, max: 600, step: 15, time: true },
+];
+let presets = [
+  { name: 'Tabata', builtIn: true, c: { prep: 10, work: 20, rest: 10, rounds: 8, sets: 1, setRest: 60 } },
+  { name: 'HIIT',   builtIn: true, c: { prep: 10, work: 40, rest: 20, rounds: 8, sets: 3, setRest: 60 } },
+];
+let cfg = { ...presets[0].c };
+const $ = id => document.getElementById(id);
+const fmt = s => s < 60 ? `${s}<small style="font-size:.5em"> 秒</small>` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+const plain = s => s < 60 ? `${s} 秒` : `${Math.floor(s / 60)} 分 ${s % 60 ? s % 60 + ' 秒' : ''}`.trim();
+const total = c => c.prep + c.sets * (c.rounds * c.work + (c.rounds - 1) * c.rest) + (c.sets - 1) * c.setRest;
+const summary = c => `${c.work}/${c.rest} 秒 × ${c.rounds} 回 × ${c.sets} 組`;
+
+// 設定列
+$('rows').innerHTML = FIELDS.map(f => `
+  <li class="row" id="row-${f.k}">
+    <span class="name"><i class="dot" style="background:${f.dot}"></i>${f.name}</span>
+    <button class="step" data-k="${f.k}" data-d="-1" aria-label="${f.name}減少">−</button>
+    <span class="val" id="v-${f.k}" aria-live="polite"></span>
+    <button class="step" data-k="${f.k}" data-d="1" aria-label="${f.name}增加">+</button>
+  </li>`).join('');
+
+function render(bumpKey) {
+  for (const f of FIELDS) {
+    const v = cfg[f.k], el = $('v-' + f.k);
+    el.innerHTML = f.time ? fmt(v) : v;
+    el.setAttribute('aria-label', `${f.name} ${f.time ? plain(v) : v}`);
+    document.querySelector(`[data-k="${f.k}"][data-d="-1"]`).disabled = v <= f.min;
+    document.querySelector(`[data-k="${f.k}"][data-d="1"]`).disabled = v >= f.max;
+  }
+  $('row-rest').classList.toggle('off', cfg.rounds === 1);       // 只有 1 回合就沒有休息
+  $('row-setRest').classList.toggle('off', cfg.sets === 1);      // 只有 1 組就沒有組間休息
+  const t = total(cfg);
+  $('tt').textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+  if (bumpKey) { const el = $('v-' + bumpKey); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+
+function change(k, d) {
+  const f = FIELDS.find(x => x.k === k), next = Math.min(f.max, Math.max(f.min, cfg[k] + d * f.step));
+  if (next === cfg[k]) return false;
+  cfg[k] = next; $('pname').textContent = '自訂'; render(k); return true;
+}
+
+// 按住連續加減：0.4 秒後開始，每 0.08 秒一次
+let hold, rep;
+const stop = () => { clearTimeout(hold); clearInterval(rep); };
+document.querySelectorAll('.step').forEach(b => {
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault(); const { k, d } = b.dataset;
+    change(k, +d);
+    hold = setTimeout(() => rep = setInterval(() => change(k, +d) || stop(), 80), 400);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
+  b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); change(b.dataset.k, +b.dataset.d); } });
+});
+
+$('sound').addEventListener('click', e => {
+  const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+  e.currentTarget.setAttribute('aria-pressed', on); e.currentTarget.textContent = on ? '🔊' : '🔇';
+  toast(on ? '聲音開啟' : '聲音關閉');
+});
+$('go').addEventListener('click', () => location.href = 'b.html');
+
+// 常用設定抽屜
+const sheet = $('sheet');
+function list() {
+  $('plist').innerHTML = presets.map((p, i) => `
+    <li><button class="pick" data-i="${i}"><b></b><span>${summary(p.c)} · ${plain(total(p.c))}</span></button>
+    ${p.builtIn ? '' : `<button class="del" data-i="${i}" aria-label="刪除">✕</button>`}</li>`).join('');
+  $('plist').querySelectorAll('.pick b').forEach((b, i) => b.textContent = presets[i].name); // 名稱用 textContent，避免使用者輸入被當成 HTML
+}
+function openSheet() { list(); sheet.showModal(); requestAnimationFrame(() => sheet.classList.add('show')); }
+function closeSheet() { sheet.classList.remove('show'); setTimeout(() => sheet.close(), 400); }
+$('openPresets').addEventListener('click', openSheet);
+sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });     // 點背景關閉
+sheet.addEventListener('cancel', e => { e.preventDefault(); closeSheet(); });        // Esc 關閉
+$('plist').addEventListener('click', e => {
+  const pick = e.target.closest('.pick'), del = e.target.closest('.del');
+  if (pick) { const p = presets[pick.dataset.i]; cfg = { ...p.c }; $('pname').textContent = p.name; render(); closeSheet(); }
+  if (del) {
+    const li = del.closest('li'), p = presets[del.dataset.i];
+    if (!confirm(`刪除「${p.name}」？`)) return;
+    li.classList.add('gone');
+    setTimeout(() => { presets = presets.filter(x => x !== p); list(); }, 250);
+  }
+});
+$('saveForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('newName').value.trim();
+  if (!name) return;
+  if (presets.some(p => p.name === name)) { toast('已經有同名的設定'); return; }
+  presets.push({ name, c: { ...cfg } }); $('newName').value = ''; $('pname').textContent = name;
+  list(); toast(`已儲存「${name}」`);
+});
+
+let tt;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; clearTimeout(tt);
+  t.hidePopover?.(); t.showPopover?.();   // 重新顯示，確保疊在最上層（也蓋過抽屜）
+  requestAnimationFrame(() => t.classList.add('on'));
+  tt = setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.hidePopover?.(), 300); }, 1600);
+}
+render();
+</script>
+</body>
+</html>
