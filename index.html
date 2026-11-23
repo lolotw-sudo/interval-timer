@@ -137,8 +137,11 @@
   /* A 液面：整個畫面是一杯水，水位隨時間下降 */
   [data-theme="a"] #run { background: var(--dark); color: #fff; }
   [data-theme="a"] #liquid { display: block; background: var(--deep); transform: translateY(calc(var(--p, 0) * (100% + 24px))); }   /* +24px：水見底時波浪也一起沉下去 */
-  #wave { position: absolute; left: 0; top: -23px; width: 200%; height: 24px; fill: var(--deep); animation: drift 3s linear infinite; }
-  @keyframes drift { to { transform: translateX(-50%); } }
+  /* 波浪：一段 120px 寬的波形左右無限重複（用遮罩切出形狀），靠移動遮罩位置流動——不管螢幕多寬都蓋滿、不會斷 */
+  #wave { position: absolute; left: 0; right: 0; top: -23px; height: 24px; background: var(--deep);
+    --w: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 24' preserveAspectRatio='none'%3E%3Cpath d='M0 12 Q25 0 50 12 T100 12 V24 H0Z'/%3E%3C/svg%3E");
+    -webkit-mask: var(--w) 0 0 / 120px 24px repeat-x; mask: var(--w) 0 0 / 120px 24px repeat-x; animation: drift 3s linear infinite; }
+  @keyframes drift { to { -webkit-mask-position: -120px 0; mask-position: -120px 0; } }
   [data-theme="a"] .meta, [data-theme="a"] #next { color: #fff; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,.45); }   /* 陰影：在黃、綠水面上也看得清 */
   [data-theme="a"] #wakeWarn { color: #fff; }
   [data-theme="a"] #label { color: #fff; font-weight: 800; font-size: clamp(32px, 10vw, 52px); letter-spacing: .1em; }
@@ -216,7 +219,7 @@
 </section>
 
 <section class="screen" id="run" aria-label="計時中，點一下暫停，長按一秒結束，左右滑動換風格">
-  <div class="layer" id="liquid"><svg id="wave" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true"><path d="M0 12 Q25 0 50 12 T100 12 T150 12 T200 12 V24 H0Z"/></svg></div>
+  <div class="layer" id="liquid"><div id="wave"></div></div>
   <div class="layer" id="wipe"></div>
   <div class="layer" id="burst"></div>
   <div class="layer" id="bar"><i></i></div>
