@@ -136,12 +136,12 @@
 
   /* A 液面：整個畫面是一杯水，水位隨時間下降 */
   [data-theme="a"] #run { background: var(--dark); color: #fff; }
-  [data-theme="a"] #liquid { display: block; background: var(--deep); transform: translateY(calc(var(--p, 0) * (100% + 24px))); }   /* +24px：水見底時波浪也一起沉下去 */
-  /* 波浪：一段 120px 寬的波形左右無限重複（用遮罩切出形狀），靠移動遮罩位置流動——不管螢幕多寬都蓋滿、不會斷 */
-  #wave { position: absolute; left: 0; right: 0; top: -23px; height: 24px; background: var(--deep);
+  [data-theme="a"] #liquid { display: block; background: var(--deep); transform: translateY(calc(var(--p, 0) * (100% + 26px))); }   /* +26px：水見底時波浪也一起沉下去 */
+  /* 波浪：一段 340px 寬的波形（一個波長）左右無限重複（用遮罩切出形狀），靠移動遮罩位置流動——不管螢幕多寬都蓋滿、不會斷 */
+  #wave { position: absolute; left: 0; right: 0; top: -25px; height: 26px; background: var(--deep);
     --w: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 24' preserveAspectRatio='none'%3E%3Cpath d='M0 12 Q25 0 50 12 T100 12 V24 H0Z'/%3E%3C/svg%3E");
-    -webkit-mask: var(--w) 0 0 / 120px 24px repeat-x; mask: var(--w) 0 0 / 120px 24px repeat-x; animation: drift 3s linear infinite; }
-  @keyframes drift { to { -webkit-mask-position: -120px 0; mask-position: -120px 0; } }
+    -webkit-mask: var(--w) 0 0 / 340px 26px repeat-x; mask: var(--w) 0 0 / 340px 26px repeat-x; animation: drift 7s linear infinite; }
+  @keyframes drift { to { -webkit-mask-position: -340px 0; mask-position: -340px 0; } }
   [data-theme="a"] .meta, [data-theme="a"] #next { color: #fff; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,.45); }   /* 陰影：在黃、綠水面上也看得清 */
   [data-theme="a"] #wakeWarn { color: #fff; }
   [data-theme="a"] #label { color: #fff; font-weight: 800; font-size: clamp(32px, 10vw, 52px); letter-spacing: .1em; }
